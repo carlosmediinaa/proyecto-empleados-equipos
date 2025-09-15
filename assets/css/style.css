@@ -1,0 +1,118 @@
+/* Estilos personalizados para el sistema de gestión de empleados y equipos */
+
+body {
+  background-color: #f8f9fa;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.navbar-brand {
+  font-weight: bold;
+  color: #28a745 !important;
+}
+
+.card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.btn-primary:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
+}
+
+.btn-primary:hover,
+.btn-primary:active,
+.btn-primary:focus-visible {
+  background-color: #218838 !important;
+  border-color: #1e7e34 !important;
+}
+
+.btn-primary:disabled,
+.btn-primary[disabled] {
+  background-color: #94d3a2;
+  border-color: #94d3a2;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-warning {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+
+.table th {
+  background-color: #e9ecef;
+  border-top: none;
+  font-weight: 600;
+}
+
+.table td,
+.table th {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge {
+  font-size: 0.875em;
+}
+
+.search-box {
+  max-width: 300px;
+}
+
+.pagination {
+  justify-content: center;
+}
+
+.alert {
+  border-radius: 8px;
+}
+
+.form-control:focus {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.modal-title {
+  color: #495057;
+  font-weight: 600;
+}
+
+.fs-small {
+  font-size: 0.75rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
