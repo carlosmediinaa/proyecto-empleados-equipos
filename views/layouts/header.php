@@ -1,4 +1,7 @@
 <?php require_once __DIR__ . '/../../config.php'; ?>
+<?php require_once __DIR__ . '/../../includes/helpers.php'; ?>
+
+<?php $seccion = obtenerSeccionActual(); ?>
 
 <!DOCTYPE html>
 <html lang="es">
@@ -29,13 +32,13 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <a class="nav-link active" href="<?php echo BASE_URL; ?>index.php">Inicio</a>
+            <a class="nav-link <?php echo $seccion === 'home' ? 'active' : ''; ?>" href="<?php echo BASE_URL; ?>index.php">Inicio</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="<?php echo BASE_URL; ?>views/empleados/listar.php">Empleados</a>
+            <a class="nav-link <?php echo $seccion === 'empleados' ? 'active' : ''; ?>" href="<?php echo BASE_URL; ?>views/empleados/listar.php">Empleados</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="<?php echo BASE_URL; ?>views/equipos/listar.php">Equipos</a>
+            <a class="nav-link <?php echo $seccion === 'equipos' ? 'active' : ''; ?>" href="<?php echo BASE_URL; ?>views/equipos/listar.php">Equipos</a>
           </li>
         </ul>
       </div>

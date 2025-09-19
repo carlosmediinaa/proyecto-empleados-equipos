@@ -1,30 +1,14 @@
 <?php
-// Habilitar errores para debug
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+require_once __DIR__ . '/../controllers/DashboardController.php';
 
-// Incluir configuración y conexión
-require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../db/conexion.php';
+// Inicializar el controlador
+$controller = new DashboardController($pdo);
 
-
-// Función para obtener el total desde un procedimiento almacenado
-function obtener_total($pdo, $procedimiento) {
-    $stmt = $pdo->query("CALL empleados_equipos.$procedimiento()");
-    $total = $stmt->fetch()['total'];
-    $stmt->closeCursor(); // liberar resultados
-    return $total;
-}
-
-// Obtener estadísticas generales
-$total_empleados      = obtener_total($pdo, 'sp_total_empleados');
-$total_equipos        = obtener_total($pdo, 'sp_total_equipos');
-$equipos_asignados    = obtener_total($pdo, 'sp_equipos_asignados');
-$total_departamentos  = obtener_total($pdo, 'sp_total_departamentos');
+// Obtener datos
+$data = $controller->index();
 ?>
 
-<?php require_once __DIR__ . '/../views/layouts/header.php'; ?>
+<?php require_once __DIR__ . '/layouts/header.php'; ?>
 
 <main class="container mt-4">
   <section class="row mb-4">
@@ -33,6 +17,7 @@ $total_departamentos  = obtener_total($pdo, 'sp_total_departamentos');
       <p class="lead text-center text-muted">Gestiona empleados y equipos de manera eficiente</p>
     </div>
   </section>
+
   <!-- Statistics Cards -->
   <section class="row mb-5">
     <div class="col-md-3 mb-3">
@@ -41,7 +26,7 @@ $total_departamentos  = obtener_total($pdo, 'sp_total_departamentos');
           <div class="text-primary mb-2">
             <i class="bi bi-people-fill fs-2"></i>
           </div>
-          <h3 class="card-title text-primary"><?php echo $total_empleados; ?></h3>
+          <h3 class="card-title text-primary"><?php echo $data['total_empleados']; ?></h3>
           <p class="card-text">Empleados Registrados</p>
           <a href="<?php echo BASE_URL; ?>views/empleados/listar.php" class="btn btn-outline-primary btn-sm">Ver Empleados</a>
         </div>
@@ -53,7 +38,7 @@ $total_departamentos  = obtener_total($pdo, 'sp_total_departamentos');
           <div class="text-success mb-2">
             <i class="bi bi-laptop fs-2"></i>
           </div>
-          <h3 class="card-title text-success"><?php echo $total_equipos; ?></h3>
+          <h3 class="card-title text-success"><?php echo $data['total_equipos']; ?></h3>
           <p class="card-text">Equipos Registrados</p>
           <a href="<?php echo BASE_URL; ?>views/equipos/listar.php" class="btn btn-outline-success btn-sm">Ver Equipos</a>
         </div>
@@ -65,7 +50,7 @@ $total_departamentos  = obtener_total($pdo, 'sp_total_departamentos');
           <div class="text-warning mb-2">
             <i class="bi bi-link-45deg fs-2"></i>
           </div>
-          <h3 class="card-title text-warning"><?php echo $equipos_asignados; ?></h3>
+          <h3 class="card-title text-warning"><?php echo $data['equipos_asignados']; ?></h3>
           <p class="card-text">Equipos Asignados</p>
         </div>
       </div>
@@ -76,12 +61,13 @@ $total_departamentos  = obtener_total($pdo, 'sp_total_departamentos');
           <div class="text-info mb-2">
             <i class="bi bi-building fs-2"></i>
           </div>
-          <h3 class="card-title text-info"><?php echo $total_departamentos; ?></h3>
+          <h3 class="card-title text-info"><?php echo $data['total_departamentos']; ?></h3>
           <p class="card-text">Departamentos</p>
         </div>
       </div>
     </div>
   </section>
+
   <!-- Quick Actions -->
   <section class="row">
     <div class="col-md-6 mb-4">
@@ -131,4 +117,4 @@ $total_departamentos  = obtener_total($pdo, 'sp_total_departamentos');
   </section>
 </main>
 
-<?php require_once __DIR__ . '/../views/layouts/footer.php'; ?>
+<?php require_once __DIR__ . '/layouts/footer.php'; ?>

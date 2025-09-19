@@ -5,6 +5,20 @@ USE empleados_equipos;
 -- ==========================================
 
 -- ------------------------------------------
+-- Obtener empleado por ID
+-- ------------------------------------------
+
+DROP PROCEDURE IF EXISTS sp_obtener_empleado;
+DELIMITER $$
+CREATE PROCEDURE sp_obtener_empleado(IN p_id INT)
+BEGIN
+    SELECT *
+    FROM empleados
+    WHERE id = p_id;
+END$$
+DELIMITER ;
+
+-- ------------------------------------------
 -- Total de empleados
 -- ------------------------------------------
 DROP PROCEDURE IF EXISTS sp_total_empleados;

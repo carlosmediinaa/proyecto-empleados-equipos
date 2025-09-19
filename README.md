@@ -39,38 +39,49 @@ Sistema web completo tipo CRUD para la gestión de empleados y equipos de la emp
 
 ```
 proyecto-empleados-equipos/
-├── index.php                 # Página principal con estadísticas
-├── empleados/               # Módulo de empleados
-│   ├── listar.php          # Lista con búsqueda y paginación
-│   ├── crear.php           # Formulario de creación
-│   ├── editar.php          # Formulario de edición
-│   └── eliminar.php        # Proceso de eliminación
-├── equipos/                # Módulo de equipos
-│   ├── listar.php          # Lista con asignaciones
-│   ├── crear.php           # Formulario de creación
-│   ├── editar.php          # Formulario de edición
-│   └── eliminar.php        # Proceso de eliminación
-├── db/                     # Base de datos
-│   ├── conexion.php        # Configuración de conexión
-│   └── init.sql           # Script de inicialización
-└── assets/                 # Recursos estáticos
+├── index.php                      # Página principal con estadísticas
+├── views/                         # Carpeta para vistas
+│   ├── empleados/                 # Módulo de empleados
+│   │   ├── listar.php             # Lista con búsqueda y paginación
+│   │   ├── crear.php              # Formulario de creación usando procesarFormulario()
+│   │   ├── editar.php             # Formulario de edición usando procesarEdicion()
+│   │   └── eliminar.php           # Proceso de eliminación
+│   ├── equipos/                   # Módulo de equipos
+│   │   ├── listar.php             # Lista con asignaciones, búsqueda y scrollable pagination
+│   │   ├── crear.php              # Formulario de creación usando procesarFormulario()
+│   │   ├── editar.php             # Formulario de edición usando procesarEdicion()
+│   │   └── eliminar.php           # Proceso de eliminación
+│   └── layouts/                   # Layouts compartidos
+│       ├── header.php             # Cabecera común
+│       └── footer.php             # Pie de página común
+├── controllers/                   # Controladores
+│   ├── DashboardController.php
+│   ├── EmpleadoController.php
+│   └── EquipoController.php
+├── db/                            # Base de datos
+│   ├── conexion.php               # Configuración de conexión PDO
+│   ├── init.sql                   # Script de inicialización con tablas y procedimientos
+│   └── procedimientos.sql         # Script con los procedimientos almacenados para empleados y equipos
+├── includes/                      # Helpers y funciones compartidas
+│   └── helpers.php                # Helpers para formularios, listados y edición
+└── assets/                        # Recursos estáticos
     ├── css/
-    │   └── style.css       # Estilos personalizados
+    │   └── style.css              # Estilos personalizados
     ├── js/
-    │   └── main.js         # JavaScript principal
-    └── libs/               # Librerías externas
+    │   └── main.js                # JS principal (SweetAlert, validaciones)
+    └── libs/
         ├── bootstrap/
         │   ├── css/
-        │   │   └── bootstrap.min.css      # Bootstrap CSS
+        │   │   └── bootstrap.min.css
         │   ├── js/
-        │   │   └── bootstrap.bundle.min.js # Bootstrap JS (con Popper)
+        │   │   └── bootstrap.bundle.min.js
         │   └── icons/
-        │       └── bootstrap-icons.css    # Bootstrap Icons
+        │       └── bootstrap-icons.css
         └── sweetalert/
             ├── css/
-            │   └── sweetalert2.min.css    # SweetAlert2 CSS
+            │   └── sweetalert2.min.css
             └── js/
-                └── sweetalert2.min.js     # SweetAlert2 JS
+                └── sweetalert2.min.js
 ```
 
 ## 🚀 Instalación y Configuración
@@ -95,9 +106,10 @@ proyecto-empleados-equipos/
 
 2. **Configurar la base de datos**
 
-   - Crear una base de datos MySQL
-   - Importar el archivo `db/init.sql`
-   - Configurar las credenciales en `db/conexion.php`
+   - Crear una base de datos MySQL.
+   - Importar el archivo `db/init.sql` para crear tablas y datos iniciales.
+   - Importar el archivo `db/procedimientos.sql` para crear los procedimientos almacenados.
+   - Configurar las credenciales en `db/conexion.php`.
 
 3. **Configurar el servidor web**
 
@@ -116,7 +128,7 @@ Editar el archivo `db/conexion.php` con tus credenciales:
 $host = 'localhost';        // Servidor de base de datos
 $dbname = 'empleados_equipos'; // Nombre de la base de datos
 $username = 'root';         // Usuario de MySQL
-$password = '';             // Contraseña de MySQL
+$password = 'root';         // Contraseña de MySQL
 ```
 
 ## 📊 Base de Datos
