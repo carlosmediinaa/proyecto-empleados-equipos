@@ -1,79 +1,83 @@
 <?php
-  require_once __DIR__ . '/../../config.php';
-  require_once __DIR__ . '/../../db/conexion.php';
-  
-  global $TIPOS_EQUIPOS;
-  
-  $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-  if ($id <= 0) {
-      header("Location: " . BASE_URL . "views/equipos/listar.php");
-      exit;
-  }
-  
-  // Obtener equipo
-  $stmt = $pdo->prepare("SELECT * FROM equipos WHERE id = ?");
-  $stmt->execute([$id]);
-  $equipo = $stmt->fetch(PDO::FETCH_ASSOC);
-  
-  if (!$equipo) {
-      header("Location: " . BASE_URL . "views/equipos/listar.php");
-      exit;
-  }
-  
-  // Obtener lista de empleados para el select
-  $stmt_empleados = $pdo->query("SELECT id, nombre, departamento FROM empleados ORDER BY nombre");
-  $empleados = $stmt_empleados->fetchAll();
-  
-  $mensaje = '';
-  $tipo_mensaje = '';
-  
-  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $nombre = trim($_POST['nombre']);
-      $tipo = trim($_POST['tipo']);
-      $numero_serie = trim($_POST['numero_serie']);
-      $empleado_id = !empty($_POST['empleado_id']) ? (int)$_POST['empleado_id'] : null;
-  
-      $errores = [];
-  
-      if (empty($nombre)) $errores[] = "El nombre del equipo es requerido.";
-      if (empty($tipo)) $errores[] = "El tipo de equipo es requerido.";
-      if (empty($numero_serie)) $errores[] = "El número de serie es requerido.";
-  
-      if (!empty($numero_serie)) {
-          $stmt_check = $pdo->prepare("SELECT id FROM equipos WHERE numero_serie = ? AND id != ?");
-          $stmt_check->execute([$numero_serie, $id]);
-          if ($stmt_check->fetch()) $errores[] = "El número de serie ya está registrado por otro equipo.";
-      }
-  
-      if ($empleado_id && $empleado_id > 0) {
-          $stmt_emp = $pdo->prepare("SELECT id FROM empleados WHERE id = ?");
-          $stmt_emp->execute([$empleado_id]);
-          if (!$stmt_emp->fetch()) $errores[] = "El empleado seleccionado no existe.";
-      }
-  
-      if (empty($errores)) {
-          try {
-              $stmt = $pdo->prepare("UPDATE equipos SET nombre = ?, tipo = ?, numero_serie = ?, empleado_id = ? WHERE id = ?");
-              $stmt->execute([$nombre, $tipo, $numero_serie, $empleado_id, $id]);
-  
-              $mensaje = "Equipo actualizado correctamente.";
-              $tipo_mensaje = "success";
-  
-              // Actualizar datos locales
-              $equipo['nombre'] = $nombre;
-              $equipo['tipo'] = $tipo;
-              $equipo['numero_serie'] = $numero_serie;
-              $equipo['empleado_id'] = $empleado_id;
-          } catch (PDOException $e) {
-              $mensaje = "Error al actualizar el equipo: " . $e->getMessage();
-              $tipo_mensaje = "error";
-          }
-      } else {
-          $mensaje = implode("<br>", $errores);
-          $tipo_mensaje = "warning";
-      }
-  }
-  ?>
+require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../../db/conexion.php';
+
+global $TIPOS_EQUIPOS;
+
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($id <= 0) {
+    header("Location: " . BASE_URL . "views/equipos/listar.php");
+    exit;
+}
+
+// Obtener equipo usando SP
+$stmt = $pdo->prepare("SELECT * FROM equipos WHERE id = ?");
+$stmt->execute([$id]);
+$equipo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$equipo) {
+    header("Location: " . BASE_URL . "views/equipos/listar.php");
+    exit;
+}
+
+// Obtener lista de empleados para el select
+$stmt_empleados = $pdo->query("SELECT id, nombre, departamento FROM empleados ORDER BY nombre");
+$empleados = $stmt_empleados->fetchAll();
+
+$mensaje = '';
+$tipo_mensaje = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nombre = trim($_POST['nombre']);
+    $tipo = trim($_POST['tipo']);
+    $numero_serie = trim($_POST['numero_serie']);
+    $empleado_id = !empty($_POST['empleado_id']) ? (int)$_POST['empleado_id'] : null;
+
+    $errores = [];
+
+    if (empty($nombre)) $errores[] = "El nombre del equipo es requerido.";
+    if (empty($tipo)) $errores[] = "El tipo de equipo es requerido.";
+    if (empty($numero_serie)) $errores[] = "El número de serie es requerido.";
+
+    // Verificar número de serie usando SP
+    if (!empty($numero_serie)) {
+        $stmt_check = $pdo->prepare("CALL sp_verificar_numero_serie_editar(?, ?)");
+        $stmt_check->execute([$numero_serie, $id]);
+        if ($stmt_check->fetch()) $errores[] = "El número de serie ya está registrado por otro equipo.";
+        $stmt_check->closeCursor(); // Liberar cursor para siguientes llamadas
+    }
+
+    if ($empleado_id && $empleado_id > 0) {
+        $stmt_emp = $pdo->prepare("SELECT id FROM empleados WHERE id = ?");
+        $stmt_emp->execute([$empleado_id]);
+        if (!$stmt_emp->fetch()) $errores[] = "El empleado seleccionado no existe.";
+    }
+
+    if (empty($errores)) {
+        try {
+            // Actualizar equipo usando SP
+            $stmt_update = $pdo->prepare("CALL sp_actualizar_equipo(?, ?, ?, ?, ?)");
+            $stmt_update->execute([$id, $nombre, $tipo, $numero_serie, $empleado_id]);
+            $stmt_update->closeCursor();
+
+            $mensaje = "Equipo actualizado correctamente.";
+            $tipo_mensaje = "success";
+
+            // Actualizar datos locales
+            $equipo['nombre'] = $nombre;
+            $equipo['tipo'] = $tipo;
+            $equipo['numero_serie'] = $numero_serie;
+            $equipo['empleado_id'] = $empleado_id;
+        } catch (PDOException $e) {
+            $mensaje = "Error al actualizar el equipo: " . $e->getMessage();
+            $tipo_mensaje = "error";
+        }
+    } else {
+        $mensaje = implode("<br>", $errores);
+        $tipo_mensaje = "warning";
+    }
+}
+?>
 
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 

@@ -1,63 +1,49 @@
 <?php
-  require_once __DIR__ . '/../../config.php';
-  require_once __DIR__ . '/../../db/conexion.php';
-  
-  // Manejar mensajes de resultado
-  $mensaje = '';
-  $tipo_mensaje = '';
-  if (isset($_GET['mensaje'])) {
-      switch ($_GET['mensaje']) {
-          case 'eliminado':
-              $mensaje = 'Equipo "' . htmlspecialchars($_GET['nombre']) . '" eliminado exitosamente';
-              $tipo_mensaje = 'success';
-              break;
-          case 'error':
-              $mensaje = 'Error al eliminar equipo: ' . htmlspecialchars($_GET['error']);
-              $tipo_mensaje = 'error';
-              break;
-      }
-  }
-  
-  // Paginación
-  $registros_por_pagina = 5;
-  $pagina_actual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
-  $offset = ($pagina_actual - 1) * $registros_por_pagina;
-  
-  // Búsqueda
-  $busqueda = isset($_GET['busqueda']) ? $_GET['busqueda'] : '';
-  $where = '';
-  $params = [];
-  if (!empty($busqueda)) {
-      $where = "WHERE e.nombre LIKE :busqueda OR e.tipo LIKE :busqueda OR e.numero_serie LIKE :busqueda OR emp.nombre LIKE :busqueda";
-      $params[':busqueda'] = "%$busqueda%";
-  }
-  
-  // Contar total de registros
-  $sql_count = "SELECT COUNT(*) as total FROM equipos e LEFT JOIN empleados emp ON e.empleado_id = emp.id $where";
-  $stmt_count = $pdo->prepare($sql_count);
-  foreach ($params as $key => $value) {
-      $stmt_count->bindValue($key, $value);
-  }
-  $stmt_count->execute();
-  $total_registros = $stmt_count->fetch()['total'];
-  $total_paginas = ceil($total_registros / $registros_por_pagina);
-  
-  // Obtener equipos
-  $sql = "SELECT e.*, emp.nombre AS empleado_nombre, emp.departamento AS empleado_departamento 
-          FROM equipos e 
-          LEFT JOIN empleados emp ON e.empleado_id = emp.id
-          $where
-          ORDER BY e.fecha_actualizacion DESC
-          LIMIT :offset, :limit";
-  $stmt = $pdo->prepare($sql);
-  foreach ($params as $key => $value) {
-      $stmt->bindValue($key, $value);
-  }
-  $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-  $stmt->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
-  $stmt->execute();
-  $equipos = $stmt->fetchAll();
-  ?>
+require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../../db/conexion.php';
+
+// Manejar mensajes de resultado
+$mensaje = '';
+$tipo_mensaje = '';
+if (isset($_GET['mensaje'])) {
+    switch ($_GET['mensaje']) {
+        case 'eliminado':
+            $mensaje = 'Equipo "' . htmlspecialchars($_GET['nombre']) . '" eliminado exitosamente';
+            $tipo_mensaje = 'success';
+            break;
+        case 'error':
+            $mensaje = 'Error al eliminar equipo: ' . htmlspecialchars($_GET['error']);
+            $tipo_mensaje = 'error';
+            break;
+    }
+}
+
+// Paginación
+$registros_por_pagina = 5;
+$pagina_actual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+$offset = ($pagina_actual - 1) * $registros_por_pagina;
+
+// Búsqueda
+$busqueda = isset($_GET['busqueda']) ? $_GET['busqueda'] : '';
+
+// Contar total de registros usando procedimiento
+$stmt_count = $pdo->prepare("CALL sp_contar_equipos(:busqueda)");
+$stmt_count->bindValue(':busqueda', $busqueda, PDO::PARAM_STR);
+$stmt_count->execute();
+$total_registros = $stmt_count->fetch()['total'];
+$stmt_count->closeCursor();
+
+$total_paginas = ceil($total_registros / $registros_por_pagina);
+
+// Obtener equipos usando procedimiento
+$stmt = $pdo->prepare("CALL sp_listar_equipos(:busqueda, :offset, :limit)");
+$stmt->bindValue(':busqueda', $busqueda, PDO::PARAM_STR);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->bindValue(':limit', $registros_por_pagina, PDO::PARAM_INT);
+$stmt->execute();
+$equipos = $stmt->fetchAll();
+$stmt->closeCursor();
+?>
 
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 

@@ -4,7 +4,7 @@
 // -------------------------------------------------------------
 
 // URL Base del proyecto (con la barra al final)
-define('BASE_URL', 'http://localhost/proyecto-empleados-equipos/');
+define('BASE_URL', 'http://localhost:8888/proyecto-empleados-equipos/');
 
 // Nombre de la aplicación
 define('APP_NAME', 'Sistema de Gestión de Empleados y Equipos');

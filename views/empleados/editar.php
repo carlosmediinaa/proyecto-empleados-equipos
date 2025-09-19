@@ -1,58 +1,76 @@
 <?php
-  require_once __DIR__ . '/../../config.php';
-  require_once __DIR__ . '/../../db/conexion.php';
-  
-  global $DEPARTAMENTOS;
-  
-  $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
-  if ($id <= 0) {
-      header("Location: " . BASE_URL . "views/empleados/listar.php");
-      exit;
-  }
-  
-  // Obtener datos del empleado
-  $stmt = $pdo->prepare("SELECT * FROM empleados WHERE id = ?");
-  $stmt->execute([$id]);
-  $empleado = $stmt->fetch(PDO::FETCH_ASSOC);
-  
-  if (!$empleado) {
-      header("Location: " . BASE_URL . "views/empleados/listar.php");
-      exit;
-  }
-  
-  $mensaje = '';
-  $tipo_mensaje = '';
-  
-  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $nombre = trim($_POST['nombre']);
-      $correo = trim($_POST['correo']);
-      $departamento = trim($_POST['departamento']);
-  
-      $errores = [];
-      if (empty($nombre)) $errores[] = "El nombre es requerido.";
-      if (empty($correo)) $errores[] = "El correo es requerido.";
-      if (!empty($correo) && !filter_var($correo, FILTER_VALIDATE_EMAIL)) $errores[] = "Correo inválido.";
-      if (empty($departamento)) $errores[] = "Selecciona un departamento.";
-  
-      if (empty($errores)) {
-          $stmt = $pdo->prepare("UPDATE empleados SET nombre = ?, correo = ?, departamento = ? WHERE id = ?");
-          if ($stmt->execute([$nombre, $correo, $departamento, $id])) {
-              $mensaje = "Empleado actualizado correctamente.";
-              $tipo_mensaje = "success";
-              // Actualizar datos del empleado
-              $empleado['nombre'] = $nombre;
-              $empleado['correo'] = $correo;
-              $empleado['departamento'] = $departamento;
-          } else {
-              $mensaje = "Error al actualizar el empleado.";
-              $tipo_mensaje = "error";
-          }
-      } else {
-          $mensaje = implode('<br>', $errores);
-          $tipo_mensaje = "warning";
-      }
-  }
-  ?>
+require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../../db/conexion.php';
+
+global $DEPARTAMENTOS;
+
+$id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+if ($id <= 0) {
+    header("Location: " . BASE_URL . "views/empleados/listar.php");
+    exit;
+}
+
+// Obtener datos del empleado usando procedimiento directo
+$stmt = $pdo->prepare("SELECT * FROM empleados WHERE id = ?");
+$stmt->execute([$id]);
+$empleado = $stmt->fetch(PDO::FETCH_ASSOC);
+$stmt->closeCursor();
+
+if (!$empleado) {
+    header("Location: " . BASE_URL . "views/empleados/listar.php");
+    exit;
+}
+
+$mensaje = '';
+$tipo_mensaje = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nombre = trim($_POST['nombre']);
+    $correo = trim($_POST['correo']);
+    $departamento = trim($_POST['departamento']);
+
+    $errores = [];
+    if (empty($nombre)) $errores[] = "El nombre es requerido.";
+    if (empty($correo)) $errores[] = "El correo es requerido.";
+    if (!empty($correo) && !filter_var($correo, FILTER_VALIDATE_EMAIL)) $errores[] = "Correo inválido.";
+    if (empty($departamento)) $errores[] = "Selecciona un departamento.";
+
+    if (empty($errores)) {
+        try {
+            // Verificar correo usando procedimiento para edición
+            $stmt_verificar = $pdo->prepare("CALL sp_verificar_correo_edicion(?, ?)");
+            $stmt_verificar->execute([$id, $correo]);
+            $correo_existente = $stmt_verificar->fetch(PDO::FETCH_ASSOC);
+            $stmt_verificar->closeCursor();
+
+            if ($correo_existente) {
+                $errores[] = "El correo ya está registrado en otro empleado.";
+                $mensaje = implode('<br>', $errores);
+                $tipo_mensaje = "warning";
+            } else {
+                // Actualizar empleado usando procedimiento
+                $stmt_actualizar = $pdo->prepare("CALL sp_actualizar_empleado(?, ?, ?, ?)");
+                $stmt_actualizar->execute([$id, $nombre, $correo, $departamento]);
+                $stmt_actualizar->closeCursor();
+
+                $mensaje = "Empleado actualizado correctamente.";
+                $tipo_mensaje = "success";
+
+                // Actualizar datos del empleado en el formulario
+                $empleado['nombre'] = $nombre;
+                $empleado['correo'] = $correo;
+                $empleado['departamento'] = $departamento;
+            }
+        } catch (PDOException $e) {
+            $mensaje = "Error al actualizar el empleado: " . $e->getMessage();
+            $tipo_mensaje = "error";
+        }
+    } else {
+        $mensaje = implode('<br>', $errores);
+        $tipo_mensaje = "warning";
+    }
+}
+?>
 
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 

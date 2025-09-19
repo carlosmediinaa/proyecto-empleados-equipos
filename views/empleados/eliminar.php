@@ -14,26 +14,30 @@ try {
     $stmt = $pdo->prepare("SELECT * FROM empleados WHERE id = ?");
     $stmt->execute([$id]);
     $empleado = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt->closeCursor();
 
     if (!$empleado) {
         header('Location: ' . BASE_URL . 'views/empleados/listar.php');
         exit;
     }
 
-    // Verificar si el empleado tiene equipos asignados
-    $stmt_equipos = $pdo->prepare("SELECT COUNT(*) as total FROM equipos WHERE empleado_id = ?");
+    // Verificar equipos asignados usando procedimiento
+    $stmt_equipos = $pdo->prepare("CALL sp_equipos_asignados_empleado(?)");
     $stmt_equipos->execute([$id]);
-    $equipos_asignados = $stmt_equipos->fetch()['total'];
+    $equipos_asignados = $stmt_equipos->fetch(PDO::FETCH_ASSOC)['total'];
+    $stmt_equipos->closeCursor();
 
     if ($equipos_asignados > 0) {
-        // Si tiene equipos asignados, desasignarlos primero
-        $stmt_desasignar = $pdo->prepare("UPDATE equipos SET empleado_id = NULL WHERE empleado_id = ?");
+        // Desasignar equipos usando procedimiento
+        $stmt_desasignar = $pdo->prepare("CALL sp_desasignar_equipos(?)");
         $stmt_desasignar->execute([$id]);
+        $stmt_desasignar->closeCursor();
     }
 
-    // Eliminar empleado
-    $stmt_eliminar = $pdo->prepare("DELETE FROM empleados WHERE id = ?");
+    // Eliminar empleado usando procedimiento
+    $stmt_eliminar = $pdo->prepare("CALL sp_eliminar_empleado(?)");
     $stmt_eliminar->execute([$id]);
+    $stmt_eliminar->closeCursor();
 
     // Redirigir con mensaje de éxito
     header('Location: ' . BASE_URL . 'views/empleados/listar.php?mensaje=eliminado&nombre=' . urlencode($empleado['nombre']));

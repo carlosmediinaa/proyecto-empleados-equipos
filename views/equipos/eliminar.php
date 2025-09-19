@@ -10,7 +10,7 @@ if ($id <= 0) {
 }
 
 try {
-    // Obtener equipo
+    // Obtener equipo antes de eliminar
     $stmt = $pdo->prepare("SELECT * FROM equipos WHERE id = ?");
     $stmt->execute([$id]);
     $equipo = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -20,16 +20,14 @@ try {
         exit;
     }
 
-    // Eliminar equipo
-    $stmt_eliminar = $pdo->prepare("DELETE FROM equipos WHERE id = ?");
+    // Eliminar equipo usando procedimiento almacenado
+    $stmt_eliminar = $pdo->prepare("CALL sp_eliminar_equipo(?)");
     $stmt_eliminar->execute([$id]);
 
-    // Redirigir con mensaje de éxito
     header('Location: ' . BASE_URL . 'views/equipos/listar.php?mensaje=eliminado&nombre=' . urlencode($equipo['nombre']));
     exit;
 
 } catch (PDOException $e) {
-    // Redirigir con mensaje de error
     header('Location: ' . BASE_URL . 'views/equipos/listar.php?mensaje=error&error=' . urlencode($e->getMessage()));
     exit;
 }

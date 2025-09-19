@@ -1,72 +1,78 @@
 <?php
-  require_once __DIR__ . '/../../db/conexion.php';
-  
-  global $TIPOS_EQUIPOS;
-  
-  $mensaje = '';
-  $tipo_mensaje = '';
-  
-  // Obtener lista de empleados para el select
-  $stmt_empleados = $pdo->query("SELECT id, nombre, departamento FROM empleados ORDER BY nombre");
-  $empleados = $stmt_empleados->fetchAll();
-  
-  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $nombre = trim($_POST['nombre']);
-      $tipo = trim($_POST['tipo']);
-      $numero_serie = trim($_POST['numero_serie']);
-      $empleado_id = !empty($_POST['empleado_id']) ? (int)$_POST['empleado_id'] : null;
-  
-      $errores = [];
-  
-      if (empty($nombre)) {
-          $errores[] = 'El nombre del equipo es requerido';
-      }
-  
-      if (empty($tipo)) {
-          $errores[] = 'El tipo de equipo es requerido';
-      }
-  
-      if (empty($numero_serie)) {
-          $errores[] = 'El número de serie es requerido';
-      } else {
-          $stmt_check = $pdo->prepare("SELECT id FROM equipos WHERE numero_serie = ?");
-          $stmt_check->execute([$numero_serie]);
-          if ($stmt_check->fetch()) {
-              $errores[] = 'El número de serie ya está registrado';
-          }
-      }
-  
-      if ($empleado_id && $empleado_id > 0) {
-          $stmt_emp = $pdo->prepare("SELECT id FROM empleados WHERE id = ?");
-          $stmt_emp->execute([$empleado_id]);
-          if (!$stmt_emp->fetch()) {
-              $errores[] = 'El empleado seleccionado no existe';
-          }
-      }
-  
-      if (empty($errores)) {
-          try {
-              $stmt = $pdo->prepare("INSERT INTO equipos (nombre, tipo, numero_serie, empleado_id) VALUES (?, ?, ?, ?)");
-              $stmt->execute([$nombre, $tipo, $numero_serie, $empleado_id]);
-  
-              $mensaje = 'Equipo creado exitosamente';
-              $tipo_mensaje = 'success';
-  
-              // Limpiar formulario
-              $nombre = $tipo = $numero_serie = '';
-              $empleado_id = null;
-          } catch (PDOException $e) {
-              $mensaje = 'Error al crear el equipo: ' . $e->getMessage();
-              $tipo_mensaje = 'error';
-          }
-      } else {
-          $mensaje = implode('<br>', $errores);
-          $tipo_mensaje = 'error';
-      }
-  }
-  ?>
+require_once __DIR__ . '/../../db/conexion.php';
+
+global $TIPOS_EQUIPOS;
+
+$mensaje = '';
+$tipo_mensaje = '';
+
+// Obtener lista de empleados para el select usando SP
+$stmt_empleados = $pdo->query("CALL sp_listar_empleados('', 0, 1000)"); // Ajusta el límite si hay muchos empleados
+$empleados = $stmt_empleados->fetchAll();
+$stmt_empleados->closeCursor(); // Liberar cursor para futuras llamadas
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nombre = trim($_POST['nombre']);
+    $tipo = trim($_POST['tipo']);
+    $numero_serie = trim($_POST['numero_serie']);
+    $empleado_id = !empty($_POST['empleado_id']) ? (int)$_POST['empleado_id'] : null;
+
+    $errores = [];
+
+    if (empty($nombre)) {
+        $errores[] = 'El nombre del equipo es requerido';
+    }
+
+    if (empty($tipo)) {
+        $errores[] = 'El tipo de equipo es requerido';
+    }
+
+    if (empty($numero_serie)) {
+        $errores[] = 'El número de serie es requerido';
+    } else {
+        // Verificar número de serie usando SP
+        $stmt_check = $pdo->prepare("CALL sp_verificar_numero_serie(?)");
+        $stmt_check->execute([$numero_serie]);
+        if ($stmt_check->fetch()) {
+            $errores[] = 'El número de serie ya está registrado';
+        }
+        $stmt_check->closeCursor();
+    }
+
+    if ($empleado_id && $empleado_id > 0) {
+        $stmt_emp = $pdo->prepare("SELECT id FROM empleados WHERE id = ?");
+        $stmt_emp->execute([$empleado_id]);
+        if (!$stmt_emp->fetch()) {
+            $errores[] = 'El empleado seleccionado no existe';
+        }
+    }
+
+    if (empty($errores)) {
+        try {
+            // Crear equipo usando SP
+            $stmt = $pdo->prepare("CALL sp_crear_equipo(?, ?, ?, ?)");
+            $stmt->execute([$nombre, $tipo, $numero_serie, $empleado_id]);
+            $stmt->closeCursor();
+
+            $mensaje = 'Equipo creado exitosamente';
+            $tipo_mensaje = 'success';
+
+            // Limpiar formulario
+            $nombre = $tipo = $numero_serie = '';
+            $empleado_id = null;
+        } catch (PDOException $e) {
+            $mensaje = 'Error al crear el equipo: ' . $e->getMessage();
+            $tipo_mensaje = 'error';
+        }
+    } else {
+        $mensaje = implode('<br>', $errores);
+        $tipo_mensaje = 'error';
+    }
+}
+?>
 
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
+
 
 <main class="container mt-4">
   <section class="row mb-4">

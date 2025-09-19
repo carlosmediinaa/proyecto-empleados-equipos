@@ -1,26 +1,28 @@
 <?php
-  // Habilitar errores para debug
-  ini_set('display_errors', 1);
-  ini_set('display_startup_errors', 1);
-  error_reporting(E_ALL);
-  
-  // Incluir configuración y conexión
-  require_once __DIR__ . '/../config.php';
-  require_once __DIR__ . '/../db/conexion.php';
-  
-  // Obtener estadísticas generales
-  $stmt_empleados = $pdo->query("SELECT COUNT(*) as total FROM empleados");
-  $total_empleados = $stmt_empleados->fetch()['total'];
-  
-  $stmt_equipos = $pdo->query("SELECT COUNT(*) as total FROM equipos");
-  $total_equipos = $stmt_equipos->fetch()['total'];
-  
-  $stmt_asignados = $pdo->query("SELECT COUNT(*) as total FROM equipos WHERE empleado_id IS NOT NULL");
-  $equipos_asignados = $stmt_asignados->fetch()['total'];
-  
-  $stmt_departamentos = $pdo->query("SELECT COUNT(DISTINCT departamento) as total FROM empleados");
-  $total_departamentos = $stmt_departamentos->fetch()['total'];
-  ?>
+// Habilitar errores para debug
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Incluir configuración y conexión
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../db/conexion.php';
+
+
+// Función para obtener el total desde un procedimiento almacenado
+function obtener_total($pdo, $procedimiento) {
+    $stmt = $pdo->query("CALL empleados_equipos.$procedimiento()");
+    $total = $stmt->fetch()['total'];
+    $stmt->closeCursor(); // liberar resultados
+    return $total;
+}
+
+// Obtener estadísticas generales
+$total_empleados      = obtener_total($pdo, 'sp_total_empleados');
+$total_equipos        = obtener_total($pdo, 'sp_total_equipos');
+$equipos_asignados    = obtener_total($pdo, 'sp_equipos_asignados');
+$total_departamentos  = obtener_total($pdo, 'sp_total_departamentos');
+?>
 
 <?php require_once __DIR__ . '/../views/layouts/header.php'; ?>
 

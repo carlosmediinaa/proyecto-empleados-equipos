@@ -1,59 +1,65 @@
 <?php
-  require_once __DIR__ . '/../../config.php';
-  require_once __DIR__ . '/../../db/conexion.php';
-  
-  global $DEPARTAMENTOS;
-  
-  $mensaje = '';
-  $tipo_mensaje = '';
-  
-  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $nombre = trim($_POST['nombre']);
-      $correo = trim($_POST['correo']);
-      $departamento = trim($_POST['departamento']);
-  
-      $errores = [];
-  
-      if (empty($nombre)) {
-          $errores[] = 'El nombre es requerido';
-      }
-  
-      if (empty($correo)) {
-          $errores[] = 'El correo es requerido';
-      } elseif (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
-          $errores[] = 'El correo no tiene un formato válido';
-      } else {
-          $stmt_check = $pdo->prepare("SELECT id FROM empleados WHERE correo = ?");
-          $stmt_check->execute([$correo]);
-          if ($stmt_check->fetch()) {
-              $errores[] = 'El correo ya está registrado';
-          }
-      }
-  
-      if (empty($departamento)) {
-          $errores[] = 'El departamento es requerido';
-      }
-  
-      if (empty($errores)) {
-          try {
-              $stmt = $pdo->prepare("INSERT INTO empleados (nombre, correo, departamento) VALUES (?, ?, ?)");
-              $stmt->execute([$nombre, $correo, $departamento]);
-  
-              $mensaje = 'Empleado creado exitosamente';
-              $tipo_mensaje = 'success';
-  
-              // Limpiar formulario
-              $nombre = $correo = $departamento = '';
-          } catch (PDOException $e) {
-              $mensaje = 'Error al crear el empleado: ' . $e->getMessage();
-              $tipo_mensaje = 'error';
-          }
-      } else {
-          $mensaje = implode('<br>', $errores);
-          $tipo_mensaje = 'error';
-      }
-  }
-  ?>
+require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../../db/conexion.php';
+
+global $DEPARTAMENTOS;
+
+$mensaje = '';
+$tipo_mensaje = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nombre = trim($_POST['nombre']);
+    $correo = trim($_POST['correo']);
+    $departamento = trim($_POST['departamento']);
+
+    $errores = [];
+
+    // Validaciones
+    if (empty($nombre)) {
+        $errores[] = 'El nombre es requerido';
+    }
+
+    if (empty($correo)) {
+        $errores[] = 'El correo es requerido';
+    } elseif (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+        $errores[] = 'El correo no tiene un formato válido';
+    } else {
+        // Llamar al procedimiento para verificar correo
+        $stmt_check = $pdo->prepare("CALL sp_verificar_correo(?)");
+        $stmt_check->execute([$correo]);
+        if ($stmt_check->fetch()) {
+            $errores[] = 'El correo ya está registrado';
+        }
+        $stmt_check->closeCursor();
+    }
+
+    if (empty($departamento)) {
+        $errores[] = 'El departamento es requerido';
+    }
+
+    // Si no hay errores, crear empleado usando procedimiento
+    if (empty($errores)) {
+        try {
+            $stmt = $pdo->prepare("CALL sp_crear_empleado(?, ?, ?)");
+            $stmt->execute([$nombre, $correo, $departamento]);
+            $stmt->closeCursor();
+
+            $mensaje = 'Empleado creado exitosamente';
+            $tipo_mensaje = 'success';
+
+            // Limpiar formulario
+            $nombre = $correo = $departamento = '';
+        } catch (PDOException $e) {
+            $mensaje = 'Error al crear el empleado: ' . $e->getMessage();
+            $tipo_mensaje = 'error';
+        }
+    } else {
+        $mensaje = implode('<br>', $errores);
+        $tipo_mensaje = 'error';
+    }
+}
+?>
+
 
 <?php require_once __DIR__ . '/../layouts/header.php'; ?>
 
